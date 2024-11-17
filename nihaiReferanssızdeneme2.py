@@ -84,6 +84,6 @@ def process_image(image_path):
     print("Segmentasyon sonucu 'segmented_output_adaptive_shape.png' olarak kaydedildi.")
 
 # Girdi dosyası
-image_path = 'data/img8.png'
+image_path = 'data/img9.png'
 
 process_image(image_path)

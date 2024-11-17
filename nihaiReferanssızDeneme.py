@@ -92,6 +92,6 @@ def process_image(image_path):
 
 
 # Girdi dosyası
-image_path = 'data/img5.png'
+image_path = 'data/img6.png'
 
 process_image(image_path)
