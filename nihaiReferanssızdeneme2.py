@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-
 def preprocess_image(image_path):
     """Görüntüyü normalize eder ve bulanıklaştırır."""
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -11,7 +10,6 @@ def preprocess_image(image_path):
     normalized = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
     smoothed = cv2.GaussianBlur(normalized, (5, 5), 0)
     return smoothed
-
 
 def select_roi(image):
     """Prostat bölgesine odaklanmak için ROI seçimi."""
@@ -22,15 +20,11 @@ def select_roi(image):
     y_end = int(h * 0.65)
     return image[y_start:y_end, x_start:x_end], (x_start, y_start, x_end, y_end)
 
-
-def dynamic_threshold(roi):
-    """Dinamik yoğunluk eşikleme."""
-    mean_intensity = np.mean(roi)
-    lower_bound = mean_intensity - 25
-    upper_bound = mean_intensity + 25
-    binary_mask = cv2.inRange(roi, lower_bound, upper_bound)
+def adaptive_threshold(roi):
+    """Adaptif eşikleme ile prostat bölgesini belirginleştirir."""
+    binary_mask = cv2.adaptiveThreshold(roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                        cv2.THRESH_BINARY_INV, 11, 2)
     return binary_mask
-
 
 def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
     """Maskeyi temizler ve şekillendir."""
@@ -42,15 +36,16 @@ def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
         # En büyük konturu seç
         largest_contour = max(contours, key=cv2.contourArea)
 
-        # Konturları düzgünleştir
+        # Morfolojik işlemlerle iyileştir
         hull = cv2.convexHull(largest_contour)
-        center, radius = cv2.minEnclosingCircle(hull)
-        center = tuple(map(int, center))
-        radius = int(radius * 0.9)  # Yarıçapı optimize et
-        cv2.circle(full_mask, (center[0] + x_start, center[1] + y_start), radius, 255, thickness=cv2.FILLED)
+        cv2.drawContours(full_mask[y_start:y_end, x_start:x_end], [hull], -1, 255, thickness=cv2.FILLED)
+
+        # Şekli düzleştir ve boşlukları doldur
+        kernel = np.ones((7, 7), np.uint8)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, kernel)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_OPEN, kernel)
 
     return full_mask
-
 
 def process_image(image_path):
     """Segmentasyon sürecini çalıştırır."""
@@ -59,8 +54,8 @@ def process_image(image_path):
     # ROI seçimi
     roi_image, roi_coords = select_roi(preprocessed_image)
 
-    # Dinamik eşikleme
-    thresholded = dynamic_threshold(roi_image)
+    # Adaptif eşikleme
+    thresholded = adaptive_threshold(roi_image)
 
     # Maskeyi temizle ve şekillendir
     full_mask = refine_and_shape_mask(thresholded, roi_coords, preprocessed_image.shape)
@@ -72,7 +67,7 @@ def process_image(image_path):
     plt.axis("off")
 
     plt.subplot(1, 3, 2)
-    plt.title("Dinamik Eşikleme")
+    plt.title("Adaptif Eşikleme")
     plt.imshow(thresholded, cmap="gray")
     plt.axis("off")
 
@@ -85,11 +80,10 @@ def process_image(image_path):
     plt.show()
 
     # Segmentasyonu kaydet
-    cv2.imwrite("segmented_output_final.png", full_mask)
-    print("Segmentasyon sonucu 'segmented_output_final.png' olarak kaydedildi.")
-
+    cv2.imwrite("segmented_output_adaptive_shape.png", full_mask)
+    print("Segmentasyon sonucu 'segmented_output_adaptive_shape.png' olarak kaydedildi.")
 
 # Girdi dosyası
-image_path = 'data/img10.png'
+image_path = 'data/img8.png'
 
 process_image(image_path)
