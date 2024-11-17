@@ -80,10 +80,10 @@ def process_image(image_path):
     plt.show()
 
     # Segmentasyonu kaydet
-    cv2.imwrite("segmented_output_adaptive_shape.png", full_mask)
+    cv2.imwrite("outputs/img10-output.png", full_mask)
     print("Segmentasyon sonucu 'segmented_output_adaptive_shape.png' olarak kaydedildi.")
 
 # Girdi dosyası
-image_path = 'data/img9.png'
+image_path = 'data/img10.png'
 
 process_image(image_path)
