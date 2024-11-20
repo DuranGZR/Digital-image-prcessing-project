@@ -63,6 +63,27 @@ def adaptive_threshold(roi):
                                         cv2.THRESH_BINARY_INV, 11, 2)
     return binary_mask
 
+def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
+    """Maskeyi temizler ve şekillendir."""
+    x_start, y_start, x_end, y_end = roi_coords
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    full_mask = np.zeros(original_shape, dtype=np.uint8)
+
+    if contours:
+        # En büyük konturu seç
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Morfolojik işlemlerle iyileştir
+        hull = cv2.convexHull(largest_contour)
+        cv2.drawContours(full_mask[y_start:y_end, x_start:x_end], [hull], -1, 255, thickness=cv2.FILLED)
+
+        # Şekli düzleştir ve boşlukları doldur
+        kernel = np.ones((7, 7), np.uint8)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, kernel)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_OPEN, kernel)
+
+    return full_mask
+
 def process_image(image_path):
     """Segmentasyon sürecini çalıştırır ve çeşitli yöntemlerle görüntüleri işler."""
     preprocessed_image = preprocess_image(image_path)
@@ -77,6 +98,10 @@ def process_image(image_path):
     lbp_image = apply_lbp(roi_image)
     hough_image = apply_hough(roi_image)
     adaptive_thresh_image = adaptive_threshold(roi_image)
+
+    # Maskeyi temizle ve şekillendir
+    gmm_mask = refine_and_shape_mask(gmm_segmented, roi_coords, preprocessed_image.shape)
+    adaptive_thresh_mask = refine_and_shape_mask(adaptive_thresh_image, roi_coords, preprocessed_image.shape)
 
     # Görselleştir
     plt.figure(figsize=(18, 12))
@@ -115,6 +140,11 @@ def process_image(image_path):
     plt.imshow(adaptive_thresh_image, cmap="gray")
     plt.axis("off")
 
+    plt.subplot(2, 4, 8)
+    plt.title("GMM Mask")
+    plt.imshow(gmm_mask, cmap="gray")
+    plt.axis("off")
+
     plt.tight_layout()
     plt.show()
 
@@ -125,9 +155,11 @@ def process_image(image_path):
     cv2.imwrite("lbp_image.png", lbp_image)
     cv2.imwrite("hough_image.png", hough_image)
     cv2.imwrite("adaptive_thresh_image.png", adaptive_thresh_image)
+    cv2.imwrite("gmm_mask.png", gmm_mask)
+    cv2.imwrite("adaptive_thresh_mask.png", adaptive_thresh_mask)
     print("Sonuçlar kaydedildi.")
 
 # Girdi dosyası
-image_path = 'data/img5.png'
+image_path = '../Deneme2/data/img5.png'
 
 process_image(image_path)

@@ -60,7 +60,7 @@ def process_image(image_path, seed_point, threshold=20):
 
 
 # Örnek Görüntü ve Segmentasyon
-image_path = 'data/img10.png'  # Görüntü dosya yolu
+image_path = '../Deneme2/data/img10.png'  # Görüntü dosya yolu
 seed_point = (240, 320)  # Prostatın tahmini bir noktası
 threshold = 15  # Segmentasyon için yoğunluk eşik değeri
 

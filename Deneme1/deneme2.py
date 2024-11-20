@@ -100,8 +100,8 @@ def process_image(image_path, label_path, min_area=500):
     return segmented
 
 # Örnek Görüntü ve Segmentasyon
-image_path = 'data/img10.png'
-label_path = 'data/label10.png'
+image_path = '../Deneme2/data/img10.png'
+label_path = '../Deneme2/data/label10.png'
 
 min_area = 1000  # Minimum alan filtresi (piksel cinsinden)
 

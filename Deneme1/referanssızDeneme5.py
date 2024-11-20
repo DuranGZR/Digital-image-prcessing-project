@@ -154,7 +154,7 @@ def process_image(image_path, ground_truth_path=None):
 
 
 # Girdi dosyası
-image_path = 'data/img8.png'
+image_path = '../Deneme2/data/img8.png'
 ground_truth_path = 'data/ground_truth.png'
 
 process_image(image_path, ground_truth_path)

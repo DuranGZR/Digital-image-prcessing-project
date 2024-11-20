@@ -91,7 +91,7 @@ def process_image(image_path, label_path):
     print("Segmentasyon sonucu 'segmented_output.png' olarak kaydedildi.")
 
 # Girdi dosyaları
-image_path = 'data/img10.png'
-label_path = 'data/label10.png'
+image_path = '../Deneme2/data/img10.png'
+label_path = '../Deneme2/data/label10.png'
 
 process_image(image_path, label_path)

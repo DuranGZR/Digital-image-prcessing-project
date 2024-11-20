@@ -2,14 +2,24 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
+
 def preprocess_image(image_path):
-    """Görüntüyü normalize eder ve bulanıklaştırır."""
+    """Görüntü ön işleme: Normalizasyon, gürültü giderme ve histogram eşitleme."""
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise FileNotFoundError(f"{image_path} dosyası bulunamadı.")
+
+    # Normalizasyon
     normalized = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
-    smoothed = cv2.GaussianBlur(normalized, (5, 5), 0)
+
+    # Histogram Eşitleme
+    equalized = cv2.equalizeHist(normalized)
+
+    # Gürültü Eliminasyonu (Gaussian Blur ile yumuşatma)
+    smoothed = cv2.GaussianBlur(equalized, (5, 5), 0)
+
     return smoothed
+
 
 def select_roi(image):
     """Prostat bölgesine odaklanmak için ROI seçimi."""
@@ -20,11 +30,13 @@ def select_roi(image):
     y_end = int(h * 0.65)
     return image[y_start:y_end, x_start:x_end], (x_start, y_start, x_end, y_end)
 
+
 def adaptive_threshold(roi):
     """Adaptif eşikleme ile prostat bölgesini belirginleştirir."""
     binary_mask = cv2.adaptiveThreshold(roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                         cv2.THRESH_BINARY_INV, 11, 2)
     return binary_mask
+
 
 def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
     """Maskeyi temizler ve şekillendir."""
@@ -40,12 +52,13 @@ def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
         hull = cv2.convexHull(largest_contour)
         cv2.drawContours(full_mask[y_start:y_end, x_start:x_end], [hull], -1, 255, thickness=cv2.FILLED)
 
-        # Şekli düzleştir ve boşlukları doldur
+        # Şekli düzleştir ve boşlukları doldur (Morfolojik operasyonlar: Kapatma ve Açma)
         kernel = np.ones((7, 7), np.uint8)
         full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, kernel)
         full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_OPEN, kernel)
 
     return full_mask
+
 
 def process_image(image_path):
     """Segmentasyon sürecini çalıştırır."""
@@ -80,10 +93,24 @@ def process_image(image_path):
     plt.show()
 
     # Segmentasyonu kaydet
-    cv2.imwrite("outputs/img10-output.png", full_mask)
+    cv2.imwrite("segmented_output_adaptive_shape.png", full_mask)
     print("Segmentasyon sonucu 'segmented_output_adaptive_shape.png' olarak kaydedildi.")
 
+
 # Girdi dosyası
-image_path = 'data/img10.png'
+image_path = '../Deneme2/data/img5.png'
 
 process_image(image_path)
+
+# Ar-Ge aşamalarına göre eksiklikler ve düzenlemeler:
+# 1. Görüntü ön işleme:
+#    - Normalizasyon, gürültü giderme ve histogram eşitleme eklendi.
+#    - Keskinleştirme, konvolüyon/korelasyon, entropi hesaplama gibi eklemeler gerekebilir.
+# 2. Organ dokusu modelleme:
+#    - GMM, HoG, CoHoG, LBP, Hough gibi teknikler bu kodda henüz kullanılmamış.
+# 3. Otsu eşikleme:
+#    - Otsu veya varyasyonları henüz eklenmedi.
+# 4. Morfolojik operasyonlar:
+#    - Kapatma ve açma işlemleri doğru seçildi.
+# 5. Farklı kişilerin görüntüleri üzerinde denenme gerekliliği var.
+# 6. IoU hesaplama ve LABEL ile karşılaştırma henüz eklenmedi.

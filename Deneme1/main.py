@@ -40,7 +40,7 @@ def calculate_entropy(image):
     return entropy
 
 # Apply the steps to an example image
-image = cv2.imread('data/img10.png', cv2.IMREAD_GRAYSCALE)
+image = cv2.imread('../Deneme2/data/img10.png', cv2.IMREAD_GRAYSCALE)
 
 # Sequential processing
 normalized_image = normalize_image(image)

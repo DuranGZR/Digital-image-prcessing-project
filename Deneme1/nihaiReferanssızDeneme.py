@@ -19,15 +19,15 @@ def select_roi(image):
     x_start = int(w * 0.3)
     x_end = int(w * 0.7)
     y_start = int(h * 0.4)
-    y_end = int(h * 0.65)
+    y_end = int(h * 0.6)
     return image[y_start:y_end, x_start:x_end], (x_start, y_start, x_end, y_end)
 
 
 def dynamic_threshold(roi):
     """Dinamik yoğunluk eşikleme."""
     mean_intensity = np.mean(roi)
-    lower_bound = mean_intensity - 25
-    upper_bound = mean_intensity + 25
+    lower_bound = mean_intensity - 15
+    upper_bound = mean_intensity + 15
     binary_mask = cv2.inRange(roi, lower_bound, upper_bound)
     return binary_mask
 
@@ -42,12 +42,14 @@ def refine_and_shape_mask(binary_mask, roi_coords, original_shape):
         # En büyük konturu seç
         largest_contour = max(contours, key=cv2.contourArea)
 
-        # Konturları düzgünleştir
+        # Morfolojik işlemlerle iyileştir
         hull = cv2.convexHull(largest_contour)
-        center, radius = cv2.minEnclosingCircle(hull)
-        center = tuple(map(int, center))
-        radius = int(radius * 0.9)  # Yarıçapı optimize et
-        cv2.circle(full_mask, (center[0] + x_start, center[1] + y_start), radius, 255, thickness=cv2.FILLED)
+        cv2.drawContours(full_mask[y_start:y_end, x_start:x_end], [hull], -1, 255, thickness=cv2.FILLED)
+
+        # Şekli düzleştir ve boşlukları doldur
+        kernel = np.ones((5, 5), np.uint8)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, kernel)
+        full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_OPEN, kernel)
 
     return full_mask
 
@@ -85,11 +87,11 @@ def process_image(image_path):
     plt.show()
 
     # Segmentasyonu kaydet
-    cv2.imwrite("segmented_output_final.png", full_mask)
-    print("Segmentasyon sonucu 'segmented_output_final.png' olarak kaydedildi.")
+    cv2.imwrite("segmented_output_dynamic_shape.png", full_mask)
+    print("Segmentasyon sonucu 'segmented_output_dynamic_shape.png' olarak kaydedildi.")
 
 
 # Girdi dosyası
-image_path = 'data/img10.png'
+image_path = '../Deneme2/data/img6.png'
 
 process_image(image_path)
